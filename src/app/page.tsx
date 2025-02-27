@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { DayPicker } from "react-day-picker";
-import { format, isWithinInterval } from "date-fns";
+import { format, isSameDay } from "date-fns";
 import "react-day-picker/dist/style.css";
 import "./calender.css";
 import { toast } from "sonner";
@@ -41,21 +41,37 @@ const calendarData = {
 };
 
 export default function CalendarPage() {
-  const [holidayDates, setHolidayDates] = useState<Date[]>([]);
-  const [calStart, setCalStart] = useState(new Date());
-  const [calEnd, setCalEnd] = useState(new Date());
-  const [month, setMonth] = useState(calStart || new Date());
-  const [availableDates, setAvailableDates] = useState<Date[]>([]);
-  const [output, setOutput] = useState("");
-
-  const isHoliday = (date: Date) => {
-    return holidayDates.some(
-      (holiday) =>
-        holiday.getDate() === date.getDate() &&
-        holiday.getMonth() === date.getMonth() &&
-        holiday.getFullYear() === date.getFullYear()
+  const allHolidays = calendarData.holidays.map((date) => new Date(date));
+  const allAvailable = calendarData.previouslySelectedDates
+    .map((date) => new Date(date))
+    .filter(
+      (date) =>
+        !allHolidays.some((holiday) => holiday.getTime() === date.getTime()) // Remove overlapping holidays
     );
-  };
+
+  const [holidayDates, setHolidayDates] = useState<Date[]>(allHolidays);
+  const [availableDates, setAvailableDates] = useState<Date[]>(allAvailable);
+
+  const [calStart, setCalStart] = useState(
+    new Date(calendarData.calStart) || new Date()
+  );
+  const [calEnd, setCalEnd] = useState(
+    new Date(calendarData.calEnd) || new Date()
+  );
+  const [month, setMonth] = useState(
+    new Date(calendarData.calStart) || new Date()
+  );
+  const [output, setOutput] = useState("");
+  const [forceUpdateKey, setForceUpdateKey] = useState(0); // Force re-render
+
+  // const isHoliday = (date: Date) => {
+  //   return holidayDates.some(
+  //     (holiday) =>
+  //       holiday.getDate() === date.getDate() &&
+  //       holiday.getMonth() === date.getMonth() &&
+  //       holiday.getFullYear() === date.getFullYear()
+  //   );
+  // };
 
   // Function to check if a date is available
   const isAvailable = (date: Date) => {
@@ -129,15 +145,61 @@ export default function CalendarPage() {
       } else {
         toast.error("Error submitting data");
       }
-    } catch (error) {
+    } catch {
       toast.error("Submission failed");
     }
   };
 
-  useEffect(() => {
-    console.log(holidayDates);
-    console.log(availableDates);
-  }, [holidayDates, availableDates]);
+  const handleHolidayClick = (day: Date) => {
+    setHolidayDates((prevHolidays) => {
+      const isAlreadySelected = prevHolidays.some((date) =>
+        isSameDay(date, day)
+      );
+
+      if (isAlreadySelected) {
+        // Remove from holidays
+        const updatedHolidays = prevHolidays.filter(
+          (date) => !isSameDay(date, day)
+        );
+        setAvailableDates((prevAvailable) => [...prevAvailable, day]); // Add back to available
+        setForceUpdateKey((prevKey) => prevKey + 1); // Force re-render
+        return updatedHolidays;
+      } else {
+        // Add to holidays
+        setAvailableDates((prevAvailable) =>
+          prevAvailable.filter((date) => !isSameDay(date, day))
+        ); // Remove from available
+        setForceUpdateKey((prevKey) => prevKey + 1); // Force re-render
+        return [...prevHolidays, day];
+      }
+    });
+  };
+
+  const handleAvailableClick = (day: Date) => {
+    setAvailableDates((prevAvailable) => {
+      const isAlreadySelected = prevAvailable.some((date) =>
+        isSameDay(date, day)
+      );
+
+      if (isAlreadySelected) {
+        // Remove from available
+        const updatedAvailable = prevAvailable.filter(
+          (date) => !isSameDay(date, day)
+        );
+        setHolidayDates((prevHolidays) => [...prevHolidays, day]); // Add back to holidays
+        setForceUpdateKey((prevKey) => prevKey + 1); // Force re-render
+        return updatedAvailable;
+      } else {
+        // Add to available
+        setHolidayDates((prevHolidays) =>
+          prevHolidays.filter((date) => !isSameDay(date, day))
+        ); // Remove from holidays
+        setForceUpdateKey((prevKey) => prevKey + 1); // Force re-render
+        return [...prevAvailable, day];
+      }
+    });
+  };
+
   return (
     <div className="calendar-container overflow-x-hidden">
       <h1 className="calendar-title">Calendar Selection</h1>
@@ -169,16 +231,17 @@ export default function CalendarPage() {
           <DayPicker
             required
             mode="multiple"
+            key={forceUpdateKey}
             selected={holidayDates}
-            onSelect={setHolidayDates}
+            onDayClick={handleHolidayClick}
             disabled={[
               { dayOfWeek: [0, 6] },
               { before: new Date() },
-              { after: calEnd },
+              { after: calEnd || new Date() },
             ]}
-            month={month}
-            startMonth={calStart}
-            endMonth={calEnd}
+            month={month || new Date()}
+            startMonth={calStart || new Date()}
+            endMonth={calEnd || new Date()}
             onMonthChange={setMonth}
             className="holiday-calendar"
           />
@@ -191,13 +254,14 @@ export default function CalendarPage() {
           </h2>
           <DayPicker
             required
+            key={forceUpdateKey}
             mode="multiple"
             selected={availableDates}
-            onSelect={setAvailableDates}
+            onDayClick={handleAvailableClick}
+            // onSelect={handleAvailableSelect}
             disabled={[
               { dayOfWeek: [0, 6] },
               { before: new Date() },
-
               { after: calEnd },
             ]}
             month={month}
@@ -212,6 +276,7 @@ export default function CalendarPage() {
         <div className="calendar-card">
           <h2 className="calendar-card-title">Combined View</h2>
           <DayPicker
+            key={forceUpdateKey}
             mode="single"
             modifiers={modifiers}
             month={month}
@@ -219,7 +284,6 @@ export default function CalendarPage() {
             modifiersStyles={modifiersStyles}
             className="combined-calendar"
             disabled={[{ dayOfWeek: [0, 6] }, { before: new Date() }]}
-            selected={(availableDates.from, availableDates.to)}
           />
         </div>
       </div>
@@ -272,13 +336,13 @@ export default function CalendarPage() {
 
         <div className="flex justify-center items-center">
           <button
-            className="bg-blue-500 cursor hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            className="bg-blue-500 cursor-pointer hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
             onClick={() => handleSubmit()}
           >
             Submit
           </button>
           {output && (
-            <button className="bg-blue-500 cursor hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ml-2">
+            <button className="bg-blue-500 cursor-pointer hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ml-2">
               <a href="#output">See Output</a>
             </button>
           )}
