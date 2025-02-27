@@ -148,6 +148,7 @@ export default function CalendarPage() {
         <input
           type="date"
           id="calStart"
+          min={format(new Date(), "yyyy-MM-dd")}
           value={format(calStart, "yyyy-MM-dd")}
           onChange={(e) => setCalStart(new Date(e.target.value))}
         />
@@ -155,6 +156,7 @@ export default function CalendarPage() {
         <input
           type="date"
           id="calEnd"
+          min={format(new Date(), "yyyy-MM-dd")}
           className="ml-2 border-2 border-gray-300 rounded-md p-2"
           value={format(calEnd, "yyyy-MM-dd")}
           onChange={(e) => setCalEnd(new Date(e.target.value))}
