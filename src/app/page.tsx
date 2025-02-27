@@ -1,8 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { DayPicker } from "react-day-picker";
-import { format, isSameDay } from "date-fns";
+import {
+  eachDayOfInterval,
+  endOfMonth,
+  format,
+  getDay,
+  getDaysInMonth,
+  isSameDay,
+  startOfMonth,
+} from "date-fns";
 import "react-day-picker/dist/style.css";
 import "@/app/calender.css";
 import { toast } from "sonner";
@@ -39,6 +47,43 @@ export default function CalendarPage() {
         : [...prevAvailable, day]; // Add to available dates
     });
   };
+
+  // Calculate available days per month dynamically
+  const availableDaysPerMonth = useMemo(() => {
+    const months: { [key: string]: number } = {};
+
+    const current = new Date(calendarData.calStart);
+    const endDate = new Date(calendarData.calEnd);
+
+    while (current <= endDate) {
+      const monthKey = format(current, "MMMM yyyy"); // Example: "March 2025"
+      const totalDays = getDaysInMonth(current); // Total days in the month
+
+      const firstDay = startOfMonth(current);
+      const lastDay = endOfMonth(current);
+      const monthDays = eachDayOfInterval({ start: firstDay, end: lastDay });
+
+      // Count holidays, weekends, and unavailable days
+      const holidaysInMonth = allHolidays.filter(
+        (date) => format(date, "MMMM yyyy") === monthKey
+      ).length;
+      const weekendsInMonth = monthDays.filter(
+        (date) => getDay(date) === 0 || getDay(date) === 6
+      ).length;
+      const unavailableInMonth = availableDates.filter(
+        (date) => format(date, "MMMM yyyy") === monthKey
+      ).length;
+
+      // Calculate remaining available days
+      const availableDays =
+        totalDays - (holidaysInMonth + weekendsInMonth + unavailableInMonth);
+
+      months[monthKey] = availableDays;
+      current.setMonth(current.getMonth() + 1); // Move to next month
+    }
+
+    return months;
+  }, [availableDates, allHolidays]);
 
   // Submit selected dates
   const handleSubmit = async () => {
@@ -94,52 +139,86 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="calendar-container">
-      <h1 className="calendar-title">Select Available Dates</h1>
+    <div className="calendar-container flex">
+      {/* Calendar Section */}
+      <div className="calendar-content">
+        <div className="flex justify-around align-middle">
+          {/* Single Calendar */}
 
-      {/* Single Calendar */}
-      <div className="calendar-card">
-        <DayPicker
-          mode="multiple"
-          selected={availableDates}
-          onDayClick={handleAvailableClick}
-          modifiers={modifiers}
-          modifiersStyles={modifiersStyles}
-          startMonth={new Date(calendarData.calStart)}
-          endMonth={new Date(calendarData.calEnd)}
-          disabled={[...allHolidays, { dayOfWeek: [0, 6] }]}
-          showOutsideDays
-        />
+          <div className="calendar-card">
+            <h1 className="calendar-title">Select Available Dates</h1>
+            <DayPicker
+              mode="multiple"
+              selected={availableDates}
+              onDayClick={handleAvailableClick}
+              modifiers={modifiers}
+              modifiersStyles={modifiersStyles}
+              startMonth={new Date(calendarData.calStart)}
+              endMonth={new Date(calendarData.calEnd)}
+              disabled={[...allHolidays, { dayOfWeek: [0, 6] }]}
+              showOutsideDays
+            />
+          </div>
+          <div className="side-panel p-4 bg-gray-100 rounded-lg shadow-md">
+            <h2 className="side-panel-title text-xl font-semibold mb-4">
+              Remaining Available Days
+            </h2>
+            <table className="side-table w-full text-left border-collapse">
+              <thead>
+                <tr>
+                  <th className="border-b-2 p-2">Month</th>
+                  <th className="border-b-2 p-2">Available Days</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(availableDaysPerMonth).map(([month, days]) => (
+                  <tr key={month}>
+                    <td className="border-b p-2">{month}</td>
+                    <td
+                      className={`border-b p-2 ${
+                        days > 0 ? "text-green-600" : "text-red-600"
+                      }`}
+                    >
+                      {days > 0 ? days : "Fully Booked"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Selected Available Dates Summary */}
+        <div className="selected-dates">
+          <h3>Selected Available Dates</h3>
+          <div className="dates-list">
+            {availableDates.length > 0 ? (
+              availableDates.map((date, index) => (
+                <span key={index} className="date-badge available-badge">
+                  {format(date, "MMM d, yyyy")}
+                </span>
+              ))
+            ) : (
+              <p className="no-dates">No dates selected</p>
+            )}
+          </div>
+        </div>
+
+        {/* Submit Button */}
+        <button
+          className="submit-btn cursor-pointer bg-blue-500 p-2"
+          onClick={handleSubmit}
+        >
+          Submit
+        </button>
+        {output && (
+          <pre className="output">
+            <code>{output}</code>
+          </pre>
+        )}
       </div>
 
-      {/* Selected Available Dates Summary */}
-      <div className="selected-dates">
-        <h3>Selected Available Dates</h3>
-        <div className="dates-list">
-          {availableDates.length > 0 ? (
-            availableDates.map((date, index) => (
-              <span key={index} className="date-badge available-badge">
-                {format(date, "MMM d, yyyy")}
-              </span>
-            ))
-          ) : (
-            <p className="no-dates">No dates selected</p>
-          )}
-        </div>
-      </div>
-
-      {/* Submit Button */}
-      <button className="submit-btn bg-blue-500 p-2" onClick={handleSubmit}>
-        Submit
-      </button>
-
-      {/* Output */}
-      {output && (
-        <div className="output">
-          <h2>Submitted Data</h2>
-          <pre>{output}</pre>
-        </div>
-      )}
+      {/* Side Panel: Remaining Available Days per Month */}
     </div>
   );
 }
