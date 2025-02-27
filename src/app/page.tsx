@@ -1,101 +1,198 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useEffect, useState } from "react";
+import { DayPicker } from "react-day-picker";
+import { format, isWithinInterval } from "date-fns";
+import "react-day-picker/dist/style.css";
+import "./calender.css";
+import { toast } from "sonner";
+
+export default function CalendarPage() {
+  const [holidayDates, setHolidayDates] = useState<Date[]>([]);
+  const [month, setMonth] = useState(new Date());
+
+  const [availableDates, setAvailableDates] = useState<{
+    from: Date | undefined;
+    to: Date | undefined;
+  }>({
+    from: undefined,
+    to: undefined,
+  });
+
+  const isHoliday = (date: Date) => {
+    return holidayDates.some(
+      (holiday) =>
+        holiday.getDate() === date.getDate() &&
+        holiday.getMonth() === date.getMonth() &&
+        holiday.getFullYear() === date.getFullYear()
+    );
+  };
+
+  // Function to check if a date is available
+  const isAvailable = (date: Date) => {
+    if (!availableDates.from || !availableDates.to) return false;
+
+    return (
+      isWithinInterval(date, {
+        start: availableDates.from,
+        end: availableDates.to,
+      }) && !isHoliday(date)
+    );
+  };
+
+  // CSS modifiers for the calendar
+  const modifiers = {
+    holiday: holidayDates,
+    available: (date: Date) => isAvailable(date),
+  };
+
+  const modifiersStyles = {
+    holiday: {
+      backgroundColor: "rgba(239, 68, 68, 0.1)",
+      color: "rgb(153, 27, 27)",
+      border: "1px solid rgba(239, 68, 68, 0.5)",
+    },
+    available: {
+      backgroundColor: "rgba(34, 197, 94, 0.1)",
+      color: "rgb(21, 128, 61) ",
+      border: `1px solid rgba(34, 197, 94, 0.5) `,
+    },
+  };
+  useEffect(() => {
+    console.log(holidayDates);
+    console.log(availableDates);
+  }, [holidayDates, availableDates]);
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="calendar-container overflow-x-hidden">
+      <h1 className="calendar-title">Calendar Selection</h1>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      {/* Calendars section */}
+      <div className="calendars-grid">
+        {/* Holiday Calendar */}
+        <div className="calendar-card">
+          <h2 className="calendar-card-title holiday-title">Holiday Dates</h2>
+          <DayPicker
+            required
+            mode="multiple"
+            selected={holidayDates}
+            onSelect={setHolidayDates}
+            disabled={[{ dayOfWeek: [0, 6] }, { before: new Date() }]}
+            month={month}
+            onMonthChange={setMonth}
+            className="holiday-calendar"
+          />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+
+        {/* Available Dates Calendar */}
+        <div className="calendar-card">
+          <h2 className="calendar-card-title available-title">
+            Available Dates
+          </h2>
+          <DayPicker
+            mode="range"
+            selected={availableDates}
+            onSelect={setAvailableDates}
+            month={month}
+            onMonthChange={setMonth}
+            disabled={[
+              ...holidayDates,
+              { before: new Date() },
+              { dayOfWeek: [0, 6] },
+            ]}
+            className="available-calendar"
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
+        </div>
+
+        {/* Combined View Calendar */}
+        <div className="calendar-card">
+          <h2 className="calendar-card-title">Combined View</h2>
+          <DayPicker
+            mode="single"
+            modifiers={modifiers}
+            month={month}
+            onMonthChange={setMonth}
+            modifiersStyles={modifiersStyles}
+            className="combined-calendar"
+            disabled={[{ dayOfWeek: [0, 6] }, { before: new Date() }]}
+            selected={(availableDates.from, availableDates.to)}
           />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        </div>
+      </div>
+
+      {/* Selected dates display */}
+      <div className="selected-dates">
+        {/* Holiday Dates Summary */}
+        <div className="dates-summary holiday-summary">
+          <h3>Selected Holiday Dates</h3>
+          <div className="dates-list">
+            {holidayDates.length > 0 ? (
+              holidayDates.map((date, index) => (
+                <span key={index} className="date-badge holiday-badge">
+                  {format(date, "MMM d, yyyy")}
+                </span>
+              ))
+            ) : (
+              <p className="no-dates">No holiday dates selected</p>
+            )}
+          </div>
+          {holidayDates.length > 0 && (
+            <p className="dates-count">
+              {holidayDates.length} holiday date
+              {holidayDates.length !== 1 ? "s" : ""} selected
+            </p>
+          )}
+        </div>
+
+        {/* Available Dates Summary */}
+        <div className="dates-summary available-summary">
+          <h3>Available Date Range</h3>
+          {availableDates.from && availableDates.to ? (
+            <div className="range-info">
+              <div className="dates-list">
+                <span className="date-badge available-badge">
+                  From: {format(availableDates.from, "MMM d, yyyy")}
+                </span>
+                <span className="date-badge available-badge">
+                  To: {format(availableDates.to, "MMM d, yyyy")}
+                </span>
+              </div>
+              <p className="dates-count">
+                {Math.abs(
+                  Math.ceil(
+                    (availableDates.to.getTime() -
+                      availableDates.from.getTime()) /
+                      (1000 * 60 * 60 * 24)
+                  )
+                ) + 1}{" "}
+                days total
+              </p>
+              <p className="dates-count">
+                {
+                  holidayDates.filter((date) =>
+                    isWithinInterval(date, {
+                      start: availableDates.from!,
+                      end: availableDates.to!,
+                    })
+                  ).length
+                }{" "}
+                holiday(s) within this range
+              </p>
+            </div>
+          ) : (
+            <p className="no-dates">No available date range selected</p>
+          )}
+        </div>
+        <div className="flex justify-center items-center">
+          <button
+            className="bg-blue-500 cursor hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            onClick={() => {
+              toast.success("Submitted");
+            }}
+          >
+            Submit
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

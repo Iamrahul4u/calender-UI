@@ -1,0 +1,170 @@
+@import "tailwindcss";
+
+.calendar-container {
+  min-height: 100vh;
+  width: 100vw;
+  padding: 1rem;
+  background-color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  overflow: hidden;
+}
+
+.calendar-title {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 1rem;
+}
+
+.calendars-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  flex: 1;
+}
+
+.calendar-card {
+  background: white;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.calendar-card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #334155;
+}
+
+.holiday-title {
+  color: #dc2626;
+}
+
+.available-title {
+  color: #16a34a;
+}
+
+/* DayPicker custom styles */
+.rdp {
+  margin: 0;
+  width: 100%;
+}
+
+.rdp-root {
+  --rdp-accent-background-color: rgba(173, 216, 230, 0.5) !important;
+}
+.holiday-calendar .rdp-day_selected:not([disabled]) {
+  background-color: #dc2626;
+  color: white;
+}
+
+.holiday-calendar .rdp-day_selected:hover:not([disabled]) {
+  background-color: #b91c1c;
+}
+
+.available-calendar .rdp-day_selected:not([disabled]),
+.available-calendar .rdp-day_range_start:not([disabled]),
+.available-calendar .rdp-day_range_end:not([disabled]) {
+  background-color: #16a34a;
+  color: white;
+}
+
+.available-calendar .rdp-day_range_middle {
+  background-color: rgba(22, 163, 74, 0.1) !important;
+  color: #166534 !important;
+}
+
+.available-calendar .rdp-day_selected:hover:not([disabled]),
+.available-calendar .rdp-day_range_start:hover:not([disabled]),
+.available-calendar .rdp-day_range_end:hover:not([disabled]) {
+  background-color: #15803d;
+}
+
+/* Selected dates display */
+.selected-dates {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: auto;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.dates-summary {
+  background: white;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+
+.dates-summary h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #334155;
+}
+
+.dates-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.date-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+}
+
+.holiday-badge {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #991b1b;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.available-badge {
+  background-color: rgba(34, 197, 94, 0.1);
+  color: #15803d;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.dates-count {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-top: 0.5rem;
+}
+
+.no-dates {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.range-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .calendar-container {
+    padding: 0.5rem;
+  }
+
+  .calendars-grid {
+    gap: 1rem;
+  }
+
+  .selected-dates {
+    gap: 1rem;
+  }
+}
