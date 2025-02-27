@@ -6,18 +6,47 @@ import { format, isWithinInterval } from "date-fns";
 import "react-day-picker/dist/style.css";
 import "./calender.css";
 import { toast } from "sonner";
+const calendarData = {
+  calStart: "2025-07-01",
+  calEnd: "2026-06-30",
+  holidays: [
+    "2025-09-18",
+    "2025-11-05",
+    "2025-11-18",
+    "2025-11-25",
+    "2025-11-27",
+  ],
+  previouslySelectedDates: [
+    "2025-07-16",
+    "2025-07-08",
+    "2025-07-23",
+    "2025-07-29",
+    "2025-07-28",
+    "2025-07-17",
+    "2025-07-24",
+    "2025-07-03",
+    "2025-09-17",
+    "2025-09-16",
+    "2025-09-09",
+    "2025-09-10",
+    "2025-09-11",
+    "2025-12-18",
+    "2026-02-18",
+    "2026-02-17",
+    "2026-02-16",
+    "2026-02-23",
+    "2026-02-24",
+    "2026-02-25",
+  ],
+};
 
 export default function CalendarPage() {
   const [holidayDates, setHolidayDates] = useState<Date[]>([]);
-  const [month, setMonth] = useState(new Date());
-
-  const [availableDates, setAvailableDates] = useState<{
-    from: Date | undefined;
-    to: Date | undefined;
-  }>({
-    from: undefined,
-    to: undefined,
-  });
+  const [calStart, setCalStart] = useState(new Date());
+  const [calEnd, setCalEnd] = useState(new Date());
+  const [month, setMonth] = useState(calStart || new Date());
+  const [availableDates, setAvailableDates] = useState<Date[]>([]);
+  const [output, setOutput] = useState("");
 
   const isHoliday = (date: Date) => {
     return holidayDates.some(
@@ -30,13 +59,11 @@ export default function CalendarPage() {
 
   // Function to check if a date is available
   const isAvailable = (date: Date) => {
-    if (!availableDates.from || !availableDates.to) return false;
-
-    return (
-      isWithinInterval(date, {
-        start: availableDates.from,
-        end: availableDates.to,
-      }) && !isHoliday(date)
+    return availableDates.some(
+      (available) =>
+        available.getDate() === date.getDate() &&
+        available.getMonth() === date.getMonth() &&
+        available.getFullYear() === date.getFullYear()
     );
   };
 
@@ -58,6 +85,55 @@ export default function CalendarPage() {
       border: `1px solid rgba(34, 197, 94, 0.5) `,
     },
   };
+
+  const handleSubmit = async () => {
+    // Convert selected dates to ISO strings
+    const allSelected = availableDates.map((date) =>
+      format(date, "yyyy-MM-dd")
+    );
+    const previouslySelected = calendarData.previouslySelectedDates;
+
+    // Calculate newly selected and deselected dates
+    const newlySelected = allSelected.filter(
+      (date) => !previouslySelected.includes(date)
+    );
+    const newlyDeselected = previouslySelected.filter(
+      (date) => !allSelected.includes(date)
+    );
+
+    // Prepare the payload
+    const payload = [
+      {
+        urlParams: {
+          UserID: "JohnDoe",
+          RecID: "recvOsQGp6TgjCb5V",
+          Action: "ShowCalendar",
+        },
+        newlySelectedDates: newlySelected,
+        newlyDeselectedDates: newlyDeselected,
+        allSelectedDates: allSelected,
+      },
+    ];
+    try {
+      const response = await fetch(
+        "https://hook.us1.make.com/27ks4hk5m8mjgyd1i8bhw19kpripluud",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+      setOutput(JSON.stringify(payload, null, 2));
+      if (response.ok) {
+        toast.success("Dates submitted successfully!");
+      } else {
+        toast.error("Error submitting data");
+      }
+    } catch (error) {
+      toast.error("Submission failed");
+    }
+  };
+
   useEffect(() => {
     console.log(holidayDates);
     console.log(availableDates);
@@ -67,6 +143,23 @@ export default function CalendarPage() {
       <h1 className="calendar-title">Calendar Selection</h1>
 
       {/* Calendars section */}
+      <div className="time-range-picker flex justify-center items-center">
+        <label htmlFor="calStart">Calendar Start:</label>
+        <input
+          type="date"
+          id="calStart"
+          value={format(calStart, "yyyy-MM-dd")}
+          onChange={(e) => setCalStart(new Date(e.target.value))}
+        />
+        <label htmlFor="calEnd">Calendar End:</label>
+        <input
+          type="date"
+          id="calEnd"
+          className="ml-2 border-2 border-gray-300 rounded-md p-2"
+          value={format(calEnd, "yyyy-MM-dd")}
+          onChange={(e) => setCalEnd(new Date(e.target.value))}
+        />
+      </div>
       <div className="calendars-grid">
         {/* Holiday Calendar */}
         <div className="calendar-card">
@@ -76,8 +169,14 @@ export default function CalendarPage() {
             mode="multiple"
             selected={holidayDates}
             onSelect={setHolidayDates}
-            disabled={[{ dayOfWeek: [0, 6] }, { before: new Date() }]}
+            disabled={[
+              { dayOfWeek: [0, 6] },
+              { before: new Date() },
+              { after: calEnd },
+            ]}
             month={month}
+            startMonth={calStart}
+            endMonth={calEnd}
             onMonthChange={setMonth}
             className="holiday-calendar"
           />
@@ -89,21 +188,20 @@ export default function CalendarPage() {
             Available Dates
           </h2>
           <DayPicker
-            mode="range"
+            required
+            mode="multiple"
             selected={availableDates}
-            onSelect={(range) =>
-              setAvailableDates({
-                from: range?.from,
-                to: range?.to ?? undefined,
-              })
-            }
-            month={month}
-            onMonthChange={setMonth}
+            onSelect={setAvailableDates}
             disabled={[
-              ...holidayDates,
-              { before: new Date() },
               { dayOfWeek: [0, 6] },
+              { before: new Date() },
+
+              { after: calEnd },
             ]}
+            month={month}
+            startMonth={calStart}
+            endMonth={calEnd}
+            onMonthChange={setMonth}
             className="available-calendar"
           />
         </div>
@@ -147,57 +245,49 @@ export default function CalendarPage() {
             </p>
           )}
         </div>
-
-        {/* Available Dates Summary */}
-        <div className="dates-summary available-summary">
-          <h3>Available Date Range</h3>
-          {availableDates.from && availableDates.to ? (
-            <div className="range-info">
-              <div className="dates-list">
-                <span className="date-badge available-badge">
-                  From: {format(availableDates.from, "MMM d, yyyy")}
+        <div className="dates-summary ">
+          <h3>Selected Available Dates</h3>
+          <div className="dates-list">
+            {availableDates.length > 0 ? (
+              availableDates.map((date, index) => (
+                <span key={index} className="date-badge available-badge">
+                  {format(date, "MMM d, yyyy")}
                 </span>
-                <span className="date-badge available-badge">
-                  To: {format(availableDates.to, "MMM d, yyyy")}
-                </span>
-              </div>
-              <p className="dates-count">
-                {Math.abs(
-                  Math.ceil(
-                    (availableDates.to.getTime() -
-                      availableDates.from.getTime()) /
-                      (1000 * 60 * 60 * 24)
-                  )
-                ) + 1}{" "}
-                days total
-              </p>
-              <p className="dates-count">
-                {
-                  holidayDates.filter((date) =>
-                    isWithinInterval(date, {
-                      start: availableDates.from!,
-                      end: availableDates.to!,
-                    })
-                  ).length
-                }{" "}
-                holiday(s) within this range
-              </p>
-            </div>
-          ) : (
-            <p className="no-dates">No available date range selected</p>
+              ))
+            ) : (
+              <p className="no-dates">No holiday dates selected</p>
+            )}
+          </div>
+          {availableDates.length > 0 && (
+            <p className="dates-count">
+              {availableDates.length} holiday date
+              {availableDates.length !== 1 ? "s" : ""} selected
+            </p>
           )}
         </div>
+
+        {/* Available Dates Summary */}
+
         <div className="flex justify-center items-center">
           <button
             className="bg-blue-500 cursor hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            onClick={() => {
-              toast.success("Submitted");
-            }}
+            onClick={() => handleSubmit()}
           >
             Submit
           </button>
+          {output && (
+            <button className="bg-blue-500 cursor hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ml-2">
+              <a href="#output">See Output</a>
+            </button>
+          )}
         </div>
       </div>
+      {output && (
+        <div className="output" id="output">
+          <h2>Output</h2>
+          <pre>{output}</pre>
+        </div>
+      )}
     </div>
   );
 }
