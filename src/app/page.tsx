@@ -91,7 +91,12 @@ export default function CalendarPage() {
           <DayPicker
             mode="range"
             selected={availableDates}
-            onSelect={setAvailableDates}
+            onSelect={(range) =>
+              setAvailableDates({
+                from: range?.from,
+                to: range?.to ?? undefined,
+              })
+            }
             month={month}
             onMonthChange={setMonth}
             disabled={[
