@@ -24,12 +24,11 @@ The **Calendar UI** is a React-based application that allows users to select ava
 ### Installation
 
 1. **Clone the Repository:**
-   ```bash
-   git clone <repository-url>
-   cd <repository-folder>
-   ```
 
-````
+   ```bash
+   git clone https://github.com/Iamrahul4u/calender-UI.git
+   cd calender-UI
+   ```
 
 2. **Install Dependencies:**
 
@@ -45,21 +44,27 @@ The **Calendar UI** is a React-based application that allows users to select ava
 
 3. **Configure the API Endpoint:**
    Create a `.env` file in the root directory (if it doesn't exist) and add:
+
    ```env
    VITE_ENDPOINT_URL=https://your-api-endpoint.com/submit-dates
    ```
+
    Replace `https://your-api-endpoint.com/submit-dates` with the URL of your backend API.
 
 ### Running the Application
 
 1. **Start the Development Server:**
+
    ```bash
    npm run dev
    ```
+
    or
+
    ```bash
    yarn dev
    ```
+
 2. **Open in Browser:**
    The app will typically be available at [http://localhost:3000](http://localhost:3000).
 
@@ -81,26 +86,15 @@ package.json               # Project dependencies and scripts
 
 The app submits the selected available dates to a backend API using the `fetch` function. The API endpoint is configured via the `VITE_ENDPOINT_URL` environment variable.
 
-### Key Points:
+### Key Points
 
 - **API Endpoint Configuration:**
   Update the `.env` file:
+
   ```env
   VITE_ENDPOINT_URL=https://your-api-endpoint.com/submit-dates
   ```
-- **Submission Code Snippet:**
-  ```tsx
-  const endpointUrl = process.env.VITE_ENDPOINT_URL;
-  if (!endpointUrl) {
-    toast.error("Endpoint URL is not defined");
-    return;
-  }
-  const response = await fetch(endpointUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  ```
+
 - **Backend Requirements:**
   Ensure your backend is set up to receive a POST request with a JSON payload that includes `UserID`, `RecID`, `Action`, and `selectedAvailableDates`.
 
@@ -138,4 +132,7 @@ If you’d like to contribute to this project:
 1. Fork the repository.
 2. Create a new branch for your feature or bug fix.
 3. Submit a pull request detailing your changes.
-````
+
+```
+
+```
