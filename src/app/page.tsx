@@ -15,6 +15,7 @@ import "react-day-picker/dist/style.css";
 import "@/app/calender.css";
 import { toast } from "sonner";
 
+// Fake Demo Data Only for testing purpose
 const calendarData = {
   calStart: "2025-06-01",
   calEnd: "2026-06-30",
@@ -97,16 +98,19 @@ export default function CalendarPage() {
       Action: "ShowCalendar",
       selectedAvailableDates: allSelected,
     };
-
+    // Replace the url with the real backend endpoint
     try {
-      const response = await fetch(
-        "https://hook.us1.make.com/27ks4hk5m8mjgyd1i8bhw19kpripluud",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+      const endpointUrl = process.env.VITE_ENDPOINT_URL;
+      if (!endpointUrl) {
+        toast.error("Endpoint URL is not defined");
+        return;
+      }
+
+      const response = await fetch(endpointUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
       setOutput(JSON.stringify(payload, null, 2));
       if (response.ok) {
@@ -142,9 +146,8 @@ export default function CalendarPage() {
     <div className="calendar-container flex">
       {/* Calendar Section */}
       <div className="calendar-content">
-        <div className="flex justify-around align-middle">
+        <div className="flex md:flex-row flex-col  justify-around align-middle">
           {/* Single Calendar */}
-
           <div className="calendar-card">
             <h1 className="calendar-title">Select Available Dates</h1>
             <DayPicker
@@ -159,6 +162,7 @@ export default function CalendarPage() {
               showOutsideDays
             />
           </div>
+          {/* Side Panel: Remaining Available Days per Month */}
           <div className="side-panel p-4 bg-gray-100 rounded-lg shadow-md">
             <h2 className="side-panel-title text-xl font-semibold mb-4">
               Remaining Available Days
@@ -217,8 +221,6 @@ export default function CalendarPage() {
           </pre>
         )}
       </div>
-
-      {/* Side Panel: Remaining Available Days per Month */}
     </div>
   );
 }
